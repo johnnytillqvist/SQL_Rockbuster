@@ -1,0 +1,72 @@
+1. This code snippet calculates the average total amount paid by customers from a specific set of cities ('London', 'Aurora', 'Vijayawada', 'Maikop', 'Hosiarpur', 'Nakhon Sawan', 'Bhimavram', 'Nam Dinh', 'Liaocheng', 'Yinchuan'). It uses subqueries to join multiple tables (customer, address, city, country, payment) and aggregates the data to calculate the average using the AVG function and rounding it with the ROUND function.
+
+SELECT ROUND(AVG(total_amount_paid)) AS "average"
+FROM (
+  SELECT A.first_name AS customer_first_name,
+         A.last_name AS customer_last_name,
+         A.customer_id,
+         D.country,
+         C.city,
+         SUM(E.amount) AS total_amount_paid
+  FROM customer A
+  INNER JOIN address B ON A.address_id = B.address_id
+  INNER JOIN city C ON B.city_id = C.city_id
+  INNER JOIN country D ON C.country_id = D.country_id
+  INNER JOIN payment E ON A.customer_id = E.customer_id
+  WHERE city IN ('London', 'Aurora', 'Vijayawada', 'Maikop', 'Hosiarpur', 'Nakhon Sawan', 'Bhimavram', 'Nam Dinh', 'Liaocheng', 'Yinchuan')
+  GROUP BY country, city, A.customer_id, customer_first_name, customer_last_name
+  ORDER BY total_amount_paid DESC
+  LIMIT 5
+) AS total_amount_paid;
+
+2. This code snippet retrieves the country-wise count of all customers and the count of customers who are in the top 5 based on their total amount paid. It uses a subquery (top_5_customers) to get the top 5 customers and joins it with the main query to perform the count. The results are grouped by country and ordered by the count of all customers.
+
+SELECT D.country,
+       COUNT(A.customer_id) AS all_customer_count,
+       COUNT(top_5_customers.customer_id) AS top_customer_count
+FROM customer A
+INNER JOIN address B ON A.address_id = B.address_id
+INNER JOIN city C ON B.city_id = C.city_id
+INNER JOIN country D ON C.country_id = D.country_id
+LEFT JOIN (
+  SELECT A.first_name AS customer_first_name,
+         A.last_name AS customer_last_name,
+         A.customer_id,
+         D.country,
+         C.city,
+         SUM(E.amount) AS total_amount_paid
+  FROM customer A
+  INNER JOIN address B ON A.address_id = B.address_id
+  INNER JOIN city C ON B.city_id = C.city_id
+  INNER JOIN country D ON C.country_id = D.country_id
+  INNER JOIN payment E ON A.customer_id = E.customer_id
+  WHERE city IN ('London', 'Aurora', 'Vijayawada', 'Maikop', 'Hosiarpur', 'Nakhon Sawan', 'Bhimavram', 'Nam Dinh', 'Liaocheng', 'Yinchuan')
+  GROUP BY country, city, A.customer_id, customer_first_name, customer_last_name
+  ORDER BY total_amount_paid DESC
+  LIMIT 5
+) AS top_5_customers ON A.customer_id = top_5_customers.customer_id
+GROUP BY D.country
+HAVING COUNT(top_5_customers.customer_id) > 0
+ORDER BY all_customer_count DESC;
+
+3. This code snippet calculates the average total amount paid by customers from the same set of cities as in the previous snippets. It uses a common table expression (CTE) named total_amount_paid to calculate the total amount paid by customers and then selects the average using the AVG function.
+
+WITH total_amount_paid AS (
+    SELECT A.first_name AS customer_first_name,
+        A.last_name AS customer_last_name,
+        A.customer_id,
+        D.country,
+        C.city,
+        SUM(E.amount) AS total_amount_paid
+    FROM customer A
+    INNER JOIN address B ON A.address_id = B.address_id
+    INNER JOIN city C ON B.city_id = C.city_id
+    INNER JOIN country D ON C.country_id = D.country_id
+    INNER JOIN payment E ON A.customer_id = E.customer_id
+    WHERE city IN ('London', 'Aurora', 'Vijayawada', 'Maikop', 'Hosiarpur', 'Nakhon Sawan', 'Bhimavram', 'Nam Dinh', 'Liaocheng', 'Yinchuan')
+    GROUP BY country, city, A.customer_id, customer_first_name, customer_last_name
+    ORDER BY total_amount_paid DESC
+    LIMIT 5
+)
+SELECT ROUND(AVG(total_amount_paid)) AS "average"
+FROM total_amount_paid;
